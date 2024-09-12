@@ -1,0 +1,67 @@
+---
+title: Fotofallen Maske
+code-fold: true
+execute: 
+  message: false
+  warning: false
+---
+
+```{r}
+library(terra)
+library(sf)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+
+rcn01 <- rast("Magenta-Bilder/RCNX0001.JPG")
+
+samp <- terra::spatSample(rcn01, 1000,method = "regular",xy = TRUE) |> st_as_sf(coords = c("x","y"),remove = FALSE)
+```
+
+
+```{r}
+plotRGB(rcn01)
+
+plot(st_geometry(samp), add = TRUE)
+```
+
+
+```{r}
+rcn_km <- kmeans(rcn01,9)
+
+clust <- matrix(rcn_km$cluster, nrow = dim(rcn01)[1],byrow = TRUE) |> rast()
+
+
+par(mfrow = c(3,3))
+for(x in 1:9){plot(clust == x)}
+dev.off()
+```
+
+
+```{r}
+# true <- read_sf("Magenta-Bilder/RCNX0001.gpkg", "true") |> st_set_crs(NA)
+# false <- read_sf("Magenta-Bilder/RCNX0001.gpkg", "false")|> st_set_crs(NA)
+# true_xy <- st_coordinates(true)
+
+# range(true_xy[,2])
+# range(true_xy[,1])
+# true_xy[,2] <- abs(true_xy[,2])
+# true_xy[,2] <- max(true_xy[,2])-true_xy[,2]
+# true_sf <- st_as_sf(data.frame(true_xy), coords = c("X","Y"))
+```
+
+
+```{r}
+plot(rcn01)
+samp2 <- mutate(samp, type = case_when(
+  x >600 & x < 700& y > 700& y < 1100~TRUE,
+  x >800 & x < 900& y > 700& y < 1100~TRUE,
+  .default = FALSE
+), .before = "x");plot(samp2, add = TRUE, pch = "x")
+
+
+plot_ly(samp2, x = ~RCNX0001_1, y = ~RCNX0001_2, z = ~RCNX0001_3, color = ~type, colors = c("red", "blue"),size = 1) |> add_markers()
+
+```
+
